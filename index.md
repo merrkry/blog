@@ -1,3 +1,6 @@
-# Merrkry's Blog
+---
+title: 标题
+date: 2024-08-08
+---
 
-[[README]]
+欢迎！
