@@ -1,0 +1,68 @@
+name: Publish content
+
+on:
+  push:
+    branches:
+      - master
+      - obsidian
+  workflow_dispatch:
+
+jobs:
+  update_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Checkout blog
+        uses: actions/checkout@v4
+        with:
+          path: blog
+          fetch-depth: 0
+
+      - name: Checkout latest quartz
+        uses: actions/checkout@v4
+        with:
+          repository: jackyzha0/quartz
+          path: quartz
+          ref: v4
+
+      - name: Copy content
+        run: |
+          mkdir tmp
+          mkdir tmp/content
+
+          cd quartz
+          rm -rf .git
+          rm -rf .github
+          rm -rf content
+          cd ..
+
+          cd blog
+
+          git switch obsidian
+          rsync -r  ./* ../tmp/content/
+
+      - name: Rebuild publish branch
+        run: |
+          cd blog
+          git checkout --orphan new-publish
+
+          git rm -rf .
+          git clean -fd
+
+          echo "Copying from quartz"
+          rsync -a ../quartz/ .
+
+          echo "Copying from obsidian"
+          rsync -a ../tmp/content .
+
+          git add .
+          git commit -m "Rebuild publish branch"
+
+      - name: Push changes
+        run: |
+          cd blog
+          git push -u origin new-publish:publish --force
